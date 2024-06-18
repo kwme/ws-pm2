@@ -93,8 +93,8 @@ const sendUpdates = () => {
       console.error('Error retrieving PM2 status', err);
       return;
     }
-
-    const dataPromises = list.map((proc) => {
+    const filteredList = list.filter(proc => !proc.pm2_env.axm_options);
+    const dataPromises = filteredList.map((proc) => {
       return new Promise((resolve, reject) => {
         const logFilePath = proc.pm2_env.pm_out_log_path;
         fs.readFile(logFilePath, 'utf8', (err, data) => {
@@ -143,6 +143,6 @@ pm2.connect((err) => {
   }
 
   server.listen(1999, () => {
-    console.log('Server is listening on port 3000');
+    console.log('Server is listening on port 1999');
   });
 });
