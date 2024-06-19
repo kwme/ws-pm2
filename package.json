@@ -1,13 +1,13 @@
 {
   "name": "ws-pm2",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "PM2 Ui Ws",
   "main": "app.js",
   "scripts": {
     "start": "node app.js"
   },
   "dependencies": {
-    "pmx" : "beta",
+    "pmx": "beta",
     "express": "^4.17.1",
     "http": "0.0.1-security",
     "ws": "^7.4.5",
@@ -18,15 +18,17 @@
     "type": "git",
     "url": "https://github.com/keymetrics/pmx.git"
   },
-  "config" : {
-    "conf_var_1" : true,
-    "conf_var_2" : "myvalue"
+  "config": {
+    "conf_var_1": true,
+    "conf_var_2": "myvalue"
   },
-  "apps" : [{
-    "merge_logs"         : true,
-    "max_memory_restart" : "512M",
-    "script"             : "app.js"
-  }],
+  "apps": [
+    {
+      "merge_logs": true,
+      "max_memory_restart": "512M",
+      "script": "app.js"
+    }
+  ],
   "author": "Keymetrics Inc.",
   "license": "MIT"
 }
