@@ -1,7 +1,7 @@
 const pmx = require('pmx').init({
   http: true, // HTTP routes logging (default: false)
   ignore_routes: [/socket\.io/, /notFound/], // Ignore http routes with this pattern (default: [])
-  errors: true, // Exceptions logging (default: true)
+  errors: true, // Exceptions loggin (default: true)
   custom_probes: true, // Auto expose JS Loop Latency and HTTP req/s as probes (default: true)
   network: true, // Network monitoring at the application level (default: false)
   ports: true  // Shows which ports your app is listening on (default: false)
@@ -93,10 +93,7 @@ const sendUpdates = () => {
       console.error('Error retrieving PM2 status', err);
       return;
     }
-
-    // Filter out PM2 modules
     const filteredList = list.filter(proc => !proc.pm2_env.pmx_module);
-
     const dataPromises = filteredList.map((proc) => {
       return new Promise((resolve, reject) => {
         const logFilePath = proc.pm2_env.pm_out_log_path;
@@ -136,8 +133,38 @@ const sendUpdates = () => {
   });
 };
 
+const sendStateUpdates = () => {
+  pm2.list((err, list) => {
+    if (err) {
+      console.error('Error retrieving PM2 status', err);
+      return;
+    }
+    const filteredList = list.filter(proc => !proc.pm2_env.pmx_module);
+    const processData = filteredList.map((proc) => {
+      const instanceId = proc.pm2_env.NODE_APP_INSTANCE;
+      const isCluster = proc.pm2_env.exec_mode === 'cluster_mode' || proc.pm2_env.exec_mode === 'cluster';
+      const appName = isCluster && instanceId !== undefined ? `${proc.name}-${instanceId}` : proc.name;
+
+      return {
+        id: proc.pm_id, // Use pm_id as a unique identifier
+        name: appName,
+        status: proc.pm2_env.status,
+        restart: proc.pm2_env.restart_time,
+        cpu: proc.monit.cpu,
+        memory: (proc.monit.memory / 1024 / 1024).toFixed(2) + ' MB', // Convert memory to MB
+        type: proc.pm2_env.exec_mode
+      };
+    });
+
+    clients.forEach((client) => {
+      client.send(JSON.stringify({ type: 'statepm2', data: processData }));
+    });
+  });
+};
+
 // Send updates every 5 seconds
-setInterval(sendUpdates, 3000);
+setInterval(sendUpdates, 1500);
+setInterval(sendStateUpdates, 1500);
 
 pm2.connect((err) => {
   if (err) {
