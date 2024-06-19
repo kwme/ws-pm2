@@ -54,6 +54,12 @@ wss.on('connection', (ws) => {
       });
     } else if (type === 'clear') {
       clearLogs(id);
+    } else if (type === 'start-all') {
+      startAllProcesses();
+    } else if (type === 'stop-all') {
+      stopAllProcesses();
+    } else if (type === 'restart-all') {
+      restartAllProcesses();
     }
   });
 
@@ -159,6 +165,66 @@ const sendStateUpdates = () => {
     clients.forEach((client) => {
       client.send(JSON.stringify({ type: 'statepm2', data: processData }));
     });
+  });
+};
+
+const startAllProcesses = () => {
+  pm2.list((err, list) => {
+    if (err) {
+      console.error('Error retrieving PM2 list', err);
+      return;
+    }
+    const filteredList = list.filter(proc => !proc.pm2_env.pmx_module);
+    filteredList.forEach((proc) => {
+      pm2.start(proc.pm_id, (err) => {
+        if (err) {
+          console.error(`Error starting ${proc.pm_id}:`, err);
+        } else {
+          console.log(`${proc.pm_id} started successfully`);
+        }
+      });
+    });
+    sendUpdates(); // Update all clients
+  });
+};
+
+const stopAllProcesses = () => {
+  pm2.list((err, list) => {
+    if (err) {
+      console.error('Error retrieving PM2 list', err);
+      return;
+    }
+    const filteredList = list.filter(proc => !proc.pm2_env.pmx_module);
+    filteredList.forEach((proc) => {
+      pm2.stop(proc.pm_id, (err) => {
+        if (err) {
+          console.error(`Error stopping ${proc.pm_id}:`, err);
+        } else {
+          console.log(`${proc.pm_id} stopped successfully`);
+        }
+      });
+    });
+    sendUpdates(); // Update all clients
+  });
+};
+
+const restartAllProcesses = () => {
+  pm2.list((err, list) => {
+    if (err) {
+      console.error('Error retrieving PM2 list', err);
+      return;
+    }
+    const filteredList = list.filter(proc => !proc.pm2_env.pmx_module);
+    filteredList.forEach((proc) => {
+      pm2.restart(proc.pm_id, (err) => {
+        if (err) {
+          console.error(`Error restarting ${proc.pm_id}:`, err);
+        } else {
+          console.log(`${proc.pm_id} restarted successfully`);
+        }
+      });
+    });
+    sendUpdates(); // Update all clients
   });
 };
 
