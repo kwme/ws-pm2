@@ -1,6 +1,6 @@
 {
   "name": "ws-pm2",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "PM2 Ui Ws",
   "main": "app.js",
   "scripts": {
