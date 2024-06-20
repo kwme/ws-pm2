@@ -8,21 +8,13 @@ const pmx = require('pmx').init({
 });
 
 const express = require('express');
-const https = require('https');
+const http = require('http');
 const WebSocket = require('ws');
 const pm2 = require('pm2');
 const fs = require('fs');
-const path = require('path');
 
 const app = express();
-
-// Load SSL certificates
-const privateKey = fs.readFileSync(path.join(__dirname, 'server.key'), 'utf8');
-const certificate = fs.readFileSync(path.join(__dirname, 'server.cert'), 'utf8');
-
-const credentials = { key: privateKey, cert: certificate };
-
-const server = https.createServer(credentials, app);
+const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 let clients = [];
