@@ -54,6 +54,15 @@ wss.on('connection', (ws) => {
       });
     } else if (type === 'clear') {
       clearLogs(id);
+    } else if (type === 'reset') {
+      pm2.reset(id, (err) => {
+        if (err) {
+          console.error(`Error resetting ${id}:`, err);
+        } else {
+          console.log(`${id} reset successfully`);
+          sendUpdates(); // Update all clients
+        }
+      });
     } else if (type === 'start-all') {
       startAllProcesses();
     } else if (type === 'stop-all') {
