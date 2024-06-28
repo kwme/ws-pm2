@@ -1,10 +1,10 @@
 const pmx = require('pmx').init({
-  http: true, // HTTP routes logging (default: false)
-  ignore_routes: [/socket\.io/, /notFound/], // Ignore http routes with this pattern (default: [])
-  errors: true, // Exceptions loggin (default: true)
-  custom_probes: true, // Auto expose JS Loop Latency and HTTP req/s as probes (default: true)
-  network: true, // Network monitoring at the application level (default: false)
-  ports: true  // Shows which ports your app is listening on (default: false)
+  http: true, 
+  ignore_routes: [/socket\.io/, /notFound/], 
+  errors: true, 
+  custom_probes: true, 
+  network: true, 
+  ports: true  
 });
 
 const express = require('express');
@@ -31,7 +31,7 @@ wss.on('connection', (ws) => {
           console.error(`Error restarting ${id}:`, err);
         } else {
           console.log(`${id} restarted successfully`);
-          sendUpdates(); // Update all clients
+          sendUpdates();
         }
       });
     } else if (type === 'stop') {
@@ -40,7 +40,7 @@ wss.on('connection', (ws) => {
           console.error(`Error stopping ${id}:`, err);
         } else {
           console.log(`${id} stopped successfully`);
-          sendUpdates(); // Update all clients
+          sendUpdates();
         }
       });
     } else if (type === 'start') {
@@ -49,26 +49,28 @@ wss.on('connection', (ws) => {
           console.error(`Error starting ${id}:`, err);
         } else {
           console.log(`${id} started successfully`);
-          sendUpdates(); // Update all clients
+          sendUpdates();
         }
       });
     } else if (type === 'clear') {
       clearLogs(id);
-    } else if (type === 'reset') {
-      pm2.reset(id, (err) => {
-        if (err) {
-          console.error(`Error resetting ${id}:`, err);
-        } else {
-          console.log(`${id} reset successfully`);
-          sendUpdates(); // Update all clients
-        }
-      });
     } else if (type === 'start-all') {
       startAllProcesses();
     } else if (type === 'stop-all') {
       stopAllProcesses();
     } else if (type === 'restart-all') {
       restartAllProcesses();
+    } else if (type === 'reset') {
+      pm2.reset(id, (err) => {
+        if (err) {
+          console.error(`Error resetting ${id}:`, err);
+        } else {
+          console.log(`${id} reset successfully`);
+          sendUpdates();
+        }
+      });
+    } else if (type === 'reset-all') {
+      resetAllProcesses();
     }
   });
 
@@ -98,7 +100,7 @@ const clearLogs = (id) => {
       });
     });
 
-    sendUpdates(); // Update all clients
+    sendUpdates();
   });
 };
 
@@ -122,15 +124,15 @@ const sendUpdates = () => {
           const appName = isCluster && instanceId !== undefined ? `${proc.name}-${instanceId}` : proc.name;
 
           resolve({
-            id: proc.pm_id, // Use pm_id as a unique identifier
+            id: proc.pm_id, 
             name: appName,
             status: proc.pm2_env.status,
             restart: proc.pm2_env.restart_time,
             uptime: proc.pm2_env.pm_uptime,
             cpu: proc.monit.cpu,
-            memory: (proc.monit.memory / 1024 / 1024).toFixed(2) + ' MB', // Convert memory to MB
+            memory: (proc.monit.memory / 1024 / 1024).toFixed(2) + ' MB', 
             type: proc.pm2_env.exec_mode,
-            logs: data.split('\n').slice(-100).join('\n') // Show up to 100 logs
+            logs: data.split('\n').slice(-100).join('\n')
           });
         });
       });
@@ -161,12 +163,12 @@ const sendStateUpdates = () => {
       const appName = isCluster && instanceId !== undefined ? `${proc.name}-${instanceId}` : proc.name;
 
       return {
-        id: proc.pm_id, // Use pm_id as a unique identifier
+        id: proc.pm_id, 
         name: appName,
         status: proc.pm2_env.status,
         restart: proc.pm2_env.restart_time,
         cpu: proc.monit.cpu,
-        memory: (proc.monit.memory / 1024 / 1024).toFixed(2) + ' MB', // Convert memory to MB
+        memory: (proc.monit.memory / 1024 / 1024).toFixed(2) + ' MB', 
         type: proc.pm2_env.exec_mode
       };
     });
@@ -193,7 +195,7 @@ const startAllProcesses = () => {
         }
       });
     });
-    sendUpdates(); // Update all clients
+    sendUpdates();
   });
 };
 
@@ -213,7 +215,7 @@ const stopAllProcesses = () => {
         }
       });
     });
-    sendUpdates(); // Update all clients
+    sendUpdates();
   });
 };
 
@@ -233,7 +235,27 @@ const restartAllProcesses = () => {
         }
       });
     });
-    sendUpdates(); // Update all clients
+    sendUpdates();
+  });
+};
+
+const resetAllProcesses = () => {
+  pm2.list((err, list) => {
+    if (err) {
+      console.error('Error retrieving PM2 list', err);
+      return;
+    }
+    const filteredList = list.filter(proc => !proc.pm2_env.pmx_module);
+    filteredList.forEach((proc) => {
+      pm2.reset(proc.pm_id, (err) => {
+        if (err) {
+          console.error(`Error resetting ${proc.pm_id}:`, err);
+        } else {
+          console.log(`${proc.pm_id} reset successfully`);
+        }
+      });
+    });
+    sendUpdates();
   });
 };
 
